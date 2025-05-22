@@ -10,15 +10,15 @@ app.get("/data", async (req, res) => {
     .select({ view: "Grid view" })
     .eachPage((records, next) => {
       records.forEach(r => {
-        const lat = parseFloat(r.get("Latitude"));
-        const lng = parseFloat(r.get("Longitude"));
+const ll = r.get("Where was the package delivered (if it was)?") || "";
+const [lat, lng] = ll.split(",").map(s => parseFloat(s.trim()));
         if (!isNaN(lat) && !isNaN(lng)) {
           features.push({
             type: "Feature",
             geometry: { type: "Point", coordinates: [lng, lat] },
             properties: {
-              status: r.get("Status"),
-              route: r.get("Route") || ""
+              status: r.get("Package Status"),
+              left: r.get("Who or where was the package left?") || ""
             }
           });
         }
