@@ -17,6 +17,12 @@
         height: 100%;
       }
     </style>
+    <style>
+  .icon-red    { color: red;    font-size: 16px; }
+  .icon-orange { color: orange; font-size: 16px; }
+  .icon-yellow { color: yellow; font-size: 16px; }
+</style>
+    
   </head>
   <body>
     <div id="map"></div>
@@ -94,6 +100,32 @@
                 },
               }).addTo(map);
 
+              // Helper to draw a trail
+function drawTrail(eventType, color, iconClass) {
+  const feat = data.features.find(f => f.properties.event === eventType);
+  if (!feat) return;
+
+  // Polyline
+  const coords = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+  L.polyline(coords, { color: color, weight: 3 }).addTo(map);
+
+  // × markers
+  coords.forEach(([lat, lng]) => {
+    L.marker([lat, lng], {
+      icon: L.divIcon({ html: '×', className: iconClass })
+    }).addTo(map);
+  });
+}
+
+// 1️⃣ Red in-transit trail
+drawTrail("route_in_transit", "red", "icon-red");
+
+// 2️⃣ Orange tampered trail
+drawTrail("route_tampered", "orange", "icon-orange");
+
+// 3️⃣ Yellow stolen trail
+drawTrail("route_stolen", "yellow", "icon-yellow");
+              
               const bounds = L.geoJSON(data).getBounds();
               map.fitBounds(bounds, { padding: [20, 20] });
             }

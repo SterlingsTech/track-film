@@ -15,7 +15,54 @@ app.get("/data/:recId", async (req, res) => {
   try {
     // Fetch exactly one record by ID
     const record = await base(process.env.TABLE_NAME).find(recId);
+    
+    // …after point features…
 
+// 🔴 1. In-Transit Route (red)
+const inRoute = (record.get("InTransit Route") || "")
+  .split("\n")
+  .map(l => l.split(",").map(Number));
+if (inRoute.length > 1) {
+  features.push({
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: inRoute.map(([lat,lng]) => [lng,lat])
+    },
+    properties: { event: "route_in_transit" }
+  });
+}
+
+// 🟠 2. Tampered Route (orange)
+const tampered = (record.get("Tampered Route") || "")
+  .split("\n")
+  .map(l => l.split(",").map(Number));
+if (tampered.length > 1) {
+  features.push({
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: tampered.map(([lat,lng]) => [lng,lat])
+    },
+    properties: { event: "route_tampered" }
+  });
+}
+
+// 🟡 3. Stolen Route (yellow)
+const stolen = (record.get("Stolen Route") || "")
+  .split("\n")
+  .map(l => l.split(",").map(Number));
+if (stolen.length > 1) {
+  features.push({
+    type: "Feature",
+    geometry: {
+      type: "LineString",
+      coordinates: stolen.map(([lat,lng]) => [lng,lat])
+    },
+    properties: { event: "route_stolen" }
+  });
+}
+    
     // 1️⃣ Customer's Delivery Address (for zone buffers)
     const addrLL = record.get("Customers Delivery Address (GPS & What3Words)") || "";
     const [addrLat, addrLng] = addrLL
