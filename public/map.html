@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-      body, html {
+      body,
+      html {
         margin: 0;
         padding: 0;
         height: 100%;
@@ -93,8 +94,8 @@
                 },
               }).addTo(map);
 
-const bounds = L.geoJSON(data).getBounds();
-map.fitBounds(bounds, { padding: [20, 20] });
+              const bounds = L.geoJSON(data).getBounds();
+              map.fitBounds(bounds, { padding: [20, 20] });
             }
 
             // Add markers with popups
