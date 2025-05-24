@@ -20,7 +20,7 @@ app.get("/data", async (req, res) => {
         if (!isNaN(delLat) && !isNaN(delLng)) {
           features.push({
             type: "Feature",
-            geometry: { type: "Point", coordinates: [delLng, delLat] },
+            geometry: { type: "Point", coordinates: [delLat, delLng] },
             properties: {
               type: "delivered",
               status: r.get("Package Status"),
@@ -36,7 +36,7 @@ app.get("/data", async (req, res) => {
         if (!isNaN(openLat) && !isNaN(openLng)) {
           features.push({
             type: "Feature",
-            geometry: { type: "Point", coordinates: [openLng, openLat] },
+            geometry: { type: "Point", coordinates: [openLat, openLng] },
             properties: {
               type: "opened",
               status: r.get("Package Status"),
