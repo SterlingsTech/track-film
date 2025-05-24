@@ -16,7 +16,7 @@ app.get("/data/:recId", async (req, res) => {
     const record = await base(process.env.TABLE_NAME).find(recId);
 
     // 1️⃣ Customer's Delivery Address (for zone buffers)
-    const addrLL = record.get("Customers Delivery Address") || "";
+    const addrLL = record.get("Customers Delivery Address (GPS & What3Words)") || "";
     const [addrLat, addrLng] = addrLL
       .split(",")
       .map(s => parseFloat(s.trim()));
