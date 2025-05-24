@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-      /* Make the map fill the whole screen */
-      body,
-      html {
+      body, html {
         margin: 0;
         padding: 0;
         height: 100%;
@@ -24,13 +22,10 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script>
-      // ── CONFIGURE THESE ──────────────────────────────
-      const PROJECT = "goofy-rattle-casquette"; // your Glitch name
+      const PROJECT = "goofy-rattle-casquette"; // your Glitch project name
       const MAPBOX_TOKEN =
-        "pk.eyJ1IjoiYXNpZGF0LXRlc3QiLCJhIjoiY21hM3ExbnNpMmt1NjJrc21hemppdHlmZyJ9.P8Olfvt6pYjiyzHHOkAG4g"; // your Mapbox public token
-      // ────────────────────────────────────────────────
+        "pk.eyJ1IjoiYXNpZGF0LXRlc3QiLCJhIjoiY21hM3ExbnNpMmt1NjJrc21hemppdHlmZyJ9.P8Olfvt6pYjiyzHHOkAG4g";
 
-      // 1️⃣ Read recId from URL
       const params = new URLSearchParams(window.location.search);
       const recId = params.get("recId");
       if (!recId) {
@@ -38,22 +33,18 @@
         throw new Error("recId missing");
       }
 
-      // 2️⃣ Build data URL
       const DATA_URL = `https://${PROJECT}.glitch.me/data/${recId}`;
 
-      // 3️⃣ Initialize the Leaflet map
       const map = L.map("map").setView([51.505, -0.09], 13);
       L.tileLayer(
         `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
         { id: "mapbox/streets-v11", tileSize: 512, zoomOffset: -1 }
       ).addTo(map);
 
-      // 4️⃣ Fetch & render function
       function render() {
         fetch(DATA_URL)
           .then((r) => r.json())
           .then((data) => {
-            // Clear previous overlays (but keep the base map)
             map.eachLayer((layer) => {
               if (layer.options && layer.options.pane === "overlayPane") {
                 map.removeLayer(layer);
@@ -62,38 +53,21 @@
 
             let addressPoint = null;
 
-            // Plot each feature
-            data.features.forEach((f) => {
-              const [lng, lat] = f.geometry.coordinates;
-              const ev = f.properties.event;
+            // Find address location for zone drawing
+            const addressFeature = data.features.find(
+              (f) => f.properties.event === "address"
+            );
+            if (addressFeature) {
+              const [addrLng, addrLat] = addressFeature.geometry.coordinates;
+              addressPoint = [addrLat, addrLng];
 
-              if (ev === "address") {
-                // save for later buffering
-                addressPoint = [lat, lng];
-              } else {
-                // delivered or opened pin
-                const isOpened = ev === "opened";
-                L.circleMarker([lat, lng], {
-                  radius: 8,
-                  color: isOpened ? "grey" : "green",
-                  fillColor: isOpened ? "lightgrey" : "lightgreen",
-                  fillOpacity: 1,
-                  weight: 2,
-                })
-                  .addTo(map)
-                  .bindPopup(`<strong>${ev.toUpperCase()}</strong>`);
-              }
-            });
-
-            // Draw zones if we have the address point
-            if (addressPoint) {
-              const p = turf.point([addressPoint[1], addressPoint[0]]);
+              const p = turf.point([addrLng, addrLat]);
 
               // Zone 3: nearest street (~100 m)
               L.geoJSON(turf.buffer(p, 100, { units: "meters" }), {
                 style: {
-                  color: "orange", // stroke
-                  fillColor: "orange", // fill
+                  color: "orange",
+                  fillColor: "orange",
                   fillOpacity: 0.2,
                   weight: 2,
                 },
@@ -119,13 +93,40 @@
                 },
               }).addTo(map);
 
-              // Optionally, center map on the address
-              map.setView(addressPoint, 16);
+const bounds = L.geoJSON(data).getBounds();
+map.fitBounds(bounds, { padding: [20, 20] });
             }
+
+            // Add markers with popups
+            L.geoJSON(data, {
+              pointToLayer: function (feature, latlng) {
+                const isOpened = feature.properties.event === "opened";
+                const isAddress = feature.properties.event === "address";
+
+                const marker = L.circleMarker(latlng, {
+                  radius: 8,
+                  color: isOpened ? "grey" : isAddress ? "blue" : "green",
+                  fillColor: isOpened
+                    ? "lightgrey"
+                    : isAddress
+                    ? "skyblue"
+                    : "lightgreen",
+                  fillOpacity: 1,
+                  weight: 2,
+                });
+
+                marker.bindPopup(`
+                  <strong>${feature.properties.event.toUpperCase()}</strong><br>
+                  Status: ${feature.properties.status || "N/A"}<br>
+                  Left: ${feature.properties.left || "N/A"}
+                `);
+
+                return marker;
+              },
+            }).addTo(map);
           });
       }
 
-      // 5️⃣ Initial render + auto-refresh every 10 s
       render();
       setInterval(render, 10000);
     </script>
