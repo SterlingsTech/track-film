@@ -80,20 +80,35 @@
           if (addressPoint) {
             const p = turf.point([addressPoint[1], addressPoint[0]]);
 
-            // Zone 3: nearest street (~100 m)
-            L.geoJSON(turf.buffer(p, 100, { units: 'meters' }), {
-              style: { fillColor: 'rgba(255,165,0,0.3)', weight: 1 }
-            }).addTo(map);
+// Zone 3: nearest street (~100 m)
+L.geoJSON(turf.buffer(p, 100, { units: 'meters' }), {
+  style: {
+    color: 'orange',         // stroke
+    fillColor: 'orange',     // fill
+    fillOpacity: 0.2,
+    weight: 2
+  }
+}).addTo(map);
 
-            // Zone 2: neighbours (~30 m)
-            L.geoJSON(turf.buffer(p, 30, { units: 'meters' }), {
-              style: { fillColor: 'rgba(173,216,230,0.3)', weight: 1 }
-            }).addTo(map);
+// Zone 2: neighbours (~30 m)
+L.geoJSON(turf.buffer(p, 30, { units: 'meters' }), {
+  style: {
+    color: 'blue',
+    fillColor: 'lightblue',
+    fillOpacity: 0.2,
+    weight: 2
+  }
+}).addTo(map);
 
-            // Zone 1: property lot (~15 m)
-            L.geoJSON(turf.buffer(p, 15, { units: 'meters' }), {
-              style: { fillColor: 'rgba(144,238,144,0.3)', weight: 1 }
-            }).addTo(map);
+// Zone 1: property lot (~15 m)
+L.geoJSON(turf.buffer(p, 15, { units: 'meters' }), {
+  style: {
+    color: 'green',
+    fillColor: 'lightgreen',
+    fillOpacity: 0.2,
+    weight: 2
+  }
+}).addTo(map);
 
             // Optionally, center map on the address
             map.setView(addressPoint, 16);
