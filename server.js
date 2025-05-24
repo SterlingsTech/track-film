@@ -6,6 +6,7 @@ const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
   .base(process.env.AIRTABLE_BASE_ID);
 
 const app = Express();
+app.use(Express.static("public"));
 
 app.get("/data/:recId", async (req, res) => {
   const recId = req.params.recId;
@@ -23,7 +24,7 @@ app.get("/data/:recId", async (req, res) => {
     if (!isNaN(addrLat) && !isNaN(addrLng)) {
       features.push({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [addrLat, addrLng] },
+        geometry: { type: "Point", coordinates: [addrLng, addrLat] },
         properties: {
           event: "address",
           status: record.get("Package Status"),
@@ -40,7 +41,7 @@ app.get("/data/:recId", async (req, res) => {
     if (!isNaN(delLat) && !isNaN(delLng)) {
       features.push({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [delLat, delLng] },
+        geometry: { type: "Point", coordinates: [delLng, delLat] },
         properties: {
           event: "delivered",
           status: record.get("Package Status"),
@@ -57,7 +58,7 @@ app.get("/data/:recId", async (req, res) => {
     if (!isNaN(openLat) && !isNaN(openLng)) {
       features.push({
         type: "Feature",
-        geometry: { type: "Point", coordinates: [openLat, openLng] },
+        geometry: { type: "Point", coordinates: [openLng, openLat] },
         properties: {
           event: "opened",
           status: record.get("Package Status"),
