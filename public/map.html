@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
-      body,
-      html {
+      body, html {
         margin: 0;
         padding: 0;
         height: 100%;
@@ -16,22 +15,18 @@
         width: 100%;
         height: 100%;
       }
+      .icon-red    { color: red;    font-size: 16px; }
+      .icon-orange { color: orange; font-size: 16px; }
+      .icon-yellow { color: yellow; font-size: 16px; }
     </style>
-    <style>
-  .icon-red    { color: red;    font-size: 16px; }
-  .icon-orange { color: orange; font-size: 16px; }
-  .icon-yellow { color: yellow; font-size: 16px; }
-</style>
-    
   </head>
   <body>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script>
-      const PROJECT = "goofy-rattle-casquette"; // your Glitch project name
-      const MAPBOX_TOKEN =
-        "pk.eyJ1IjoiYXNpZGF0LXRlc3QiLCJhIjoiY21hM3ExbnNpMmt1NjJrc21hemppdHlmZyJ9.P8Olfvt6pYjiyzHHOkAG4g";
+      const PROJECT = "goofy-rattle-casquette";
+      const MAPBOX_TOKEN = "pk.eyJ1IjoiYXNpZGF0LXRlc3QiLCJhIjoiY21hM3ExbnNpMmt1NjJrc21hemppdHlmZyJ9.P8Olfvt6pYjiyzHHOkAG4g";
 
       const params = new URLSearchParams(window.location.search);
       const recId = params.get("recId");
@@ -42,121 +37,90 @@
 
       const DATA_URL = `https://${PROJECT}.glitch.me/data/${recId}`;
 
+      // initialize map
       const map = L.map("map").setView([51.505, -0.09], 13);
       L.tileLayer(
         `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
         { id: "mapbox/streets-v11", tileSize: 512, zoomOffset: -1 }
       ).addTo(map);
 
+      // ── STOP AUTO‐FIT AFTER USER MOVES ──
+      let userMoved = false;
+      map.on("movestart", () => { userMoved = true; });
+      // ─────────────────────────────────────
+
       function render() {
         fetch(DATA_URL)
-          .then((r) => r.json())
-          .then((data) => {
-            map.eachLayer((layer) => {
+          .then(r => r.json())
+          .then(data => {
+            // remove old overlays
+            map.eachLayer(layer => {
               if (layer.options && layer.options.pane === "overlayPane") {
                 map.removeLayer(layer);
               }
             });
 
-            let addressPoint = null;
+            // draw address zones
+            const addrFeat = data.features.find(f => f.properties.event === "address");
+            if (addrFeat) {
+              const [lng, lat] = addrFeat.geometry.coordinates;
+              const p = turf.point([lng, lat]);
 
-            // Find address location for zone drawing
-            const addressFeature = data.features.find(
-              (f) => f.properties.event === "address"
-            );
-            if (addressFeature) {
-              const [addrLng, addrLat] = addressFeature.geometry.coordinates;
-              addressPoint = [addrLat, addrLng];
-
-              const p = turf.point([addrLng, addrLat]);
-
-              // Zone 3: nearest street (~100 m)
               L.geoJSON(turf.buffer(p, 100, { units: "meters" }), {
-                style: {
-                  color: "orange",
-                  fillColor: "orange",
-                  fillOpacity: 0.2,
-                  weight: 2,
-                },
+                style: { color: "orange", fillColor: "orange", fillOpacity: 0.2, weight: 2 }
               }).addTo(map);
 
-              // Zone 2: neighbours (~30 m)
               L.geoJSON(turf.buffer(p, 30, { units: "meters" }), {
-                style: {
-                  color: "blue",
-                  fillColor: "lightblue",
-                  fillOpacity: 0.5,
-                  weight: 2,
-                },
+                style: { color: "blue", fillColor: "lightblue", fillOpacity: 0.5, weight: 2 }
               }).addTo(map);
 
-              // Zone 1: property lot (~15 m)
               L.geoJSON(turf.buffer(p, 15, { units: "meters" }), {
-                style: {
-                  color: "green",
-                  fillColor: "lightgreen",
-                  fillOpacity: 0.2,
-                  weight: 2,
-                },
+                style: { color: "green", fillColor: "lightgreen", fillOpacity: 0.2, weight: 2 }
               }).addTo(map);
+            }
 
-              // Helper to draw a trail
-function drawTrail(eventType, color, iconClass) {
-  const feat = data.features.find(f => f.properties.event === eventType);
-  if (!feat) return;
+            // helper for trails
+            function drawTrail(eventType, color, iconClass) {
+              const feat = data.features.find(f => f.properties.event === eventType);
+              if (!feat) return;
+              const coords = feat.geometry.coordinates.map(c => [c[1], c[0]]);
+              L.polyline(coords, { color, weight: 3 }).addTo(map);
+              coords.forEach(([lat, lng]) => {
+                L.marker([lat, lng], {
+                  icon: L.divIcon({ html: '×', className: iconClass })
+                }).addTo(map);
+              });
+            }
+            drawTrail("route_in_transit", "red", "icon-red");
+            drawTrail("route_tampered",   "orange", "icon-orange");
+            drawTrail("route_stolen",     "yellow", "icon-yellow");
 
-  // Polyline
-  const coords = feat.geometry.coordinates.map(c => [c[1], c[0]]);
-  L.polyline(coords, { color: color, weight: 3 }).addTo(map);
+            // markers & popups
+            L.geoJSON(data, {
+              pointToLayer(feature, latlng) {
+                const ev = feature.properties.event;
+                const isOpened  = ev === "opened";
+                const isAddress = ev === "address";
+                const color = isOpened ? "grey" : isAddress ? "blue" : "green";
+                const fill = isOpened ? "lightgrey" : isAddress ? "skyblue" : "lightgreen";
 
-  // × markers
-  coords.forEach(([lat, lng]) => {
-    L.marker([lat, lng], {
-      icon: L.divIcon({ html: '×', className: iconClass })
-    }).addTo(map);
-  });
-}
+                const marker = L.circleMarker(latlng, {
+                  radius: 8, color, fillColor: fill, fillOpacity: 1, weight: 2
+                });
+                marker.bindPopup(
+                  `<strong>${ev.toUpperCase()}</strong><br>` +
+                  `Status: ${feature.properties.status || "N/A"}<br>` +
+                  `Left: ${feature.properties.left || "N/A"}`
+                );
+                return marker;
+              }
+            }).addTo(map);
 
-// 1️⃣ Red in-transit trail
-drawTrail("route_in_transit", "red", "icon-red");
-
-// 2️⃣ Orange tampered trail
-drawTrail("route_tampered", "orange", "icon-orange");
-
-// 3️⃣ Yellow stolen trail
-drawTrail("route_stolen", "yellow", "icon-yellow");
-              
+            // only auto-fit if user hasn't moved
+            if (!userMoved) {
               const bounds = L.geoJSON(data).getBounds();
               map.fitBounds(bounds, { padding: [20, 20] });
             }
-
-            // Add markers with popups
-            L.geoJSON(data, {
-              pointToLayer: function (feature, latlng) {
-                const isOpened = feature.properties.event === "opened";
-                const isAddress = feature.properties.event === "address";
-
-                const marker = L.circleMarker(latlng, {
-                  radius: 8,
-                  color: isOpened ? "grey" : isAddress ? "blue" : "green",
-                  fillColor: isOpened
-                    ? "lightgrey"
-                    : isAddress
-                    ? "skyblue"
-                    : "lightgreen",
-                  fillOpacity: 1,
-                  weight: 2,
-                });
-
-                marker.bindPopup(`
-                  <strong>${feature.properties.event.toUpperCase()}</strong><br>
-                  Status: ${feature.properties.status || "N/A"}<br>
-                  Left: ${feature.properties.left || "N/A"}
-                `);
-
-                return marker;
-              },
-            }).addTo(map);
           });
       }
 
