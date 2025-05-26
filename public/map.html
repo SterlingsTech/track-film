@@ -95,7 +95,7 @@
             drawTrail("route_tampered",   "orange", "icon-orange");
             drawTrail("route_stolen",     "yellow", "icon-yellow");
 
-            // markers & popups with timestamps & photo
+            // markers & popups with custom address popup
             L.geoJSON(data, {
               pointToLayer(feature, latlng) {
                 const ev = feature.properties.event;
@@ -110,22 +110,28 @@
 
                 // build popup html
                 let html = `<strong>${ev.toUpperCase()}</strong><br>`;
-                html += `Status: ${feature.properties.status || "N/A"}<br>`;
-                html += `Left: ${feature.properties.left || "N/A"}<br>`;
 
-                if (ev === "delivered") {
-                  if (feature.properties.deliveredTime) {
-                    const dt = new Date(feature.properties.deliveredTime);
-                    html += `Delivered At: ${dt.toLocaleString()}<br>`;
+                if (isAddress) {
+                  html += `Name: ${feature.properties.customerName || "N/A"}<br>`;
+                  html += `Address: ${feature.properties.customerAddress || "N/A"}`;
+                } else {
+                  html += `Status: ${feature.properties.status || "N/A"}<br>`;
+                  html += `Left: ${feature.properties.left || "N/A"}<br>`;
+
+                  if (ev === "delivered") {
+                    if (feature.properties.deliveredTime) {
+                      const dt = new Date(feature.properties.deliveredTime);
+                      html += `Delivered At: ${dt.toLocaleString()}<br>`;
+                    }
+                    if (feature.properties.photoUrl) {
+                      html += `<img src="${feature.properties.photoUrl}" alt="Delivery Photo" style="max-width:200px; margin-top:5px; display:block;"/>`;
+                    }
                   }
-                  if (feature.properties.photoUrl) {
-                    html += `<img src="${feature.properties.photoUrl}" alt="Delivery Photo" style="max-width:200px; margin-top:5px; display:block;"/>`;
-                  }
-                }
-                else if (ev === "opened") {
-                  if (feature.properties.openedTime) {
-                    const ot = new Date(feature.properties.openedTime);
-                    html += `Opened At: ${ot.toLocaleString()}<br>`;
+                  else if (ev === "opened") {
+                    if (feature.properties.openedTime) {
+                      const ot = new Date(feature.properties.openedTime);
+                      html += `Opened At: ${ot.toLocaleString()}<br>`;
+                    }
                   }
                 }
 

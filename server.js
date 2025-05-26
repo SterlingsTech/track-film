@@ -53,7 +53,7 @@ app.get("/data/:recId", async (req, res) => {
       });
     }
 
-    // 1️⃣ Customer's Delivery Address (for zone buffers)
+    // 1️⃣ Customer's Delivery Address (for zone buffers + popup info)
     const addrLL = record.get("Customers Delivery Address (GPS & What3Words)") || "";
     const [addrLat, addrLng] = addrLL.split(",").map(s => parseFloat(s.trim()));
     if (!isNaN(addrLat) && !isNaN(addrLng)) {
@@ -62,8 +62,8 @@ app.get("/data/:recId", async (req, res) => {
         geometry: { type: "Point", coordinates: [addrLng, addrLat] },
         properties: {
           event: "address",
-          status: record.get("Package Status"),
-          left: record.get("Who or where was the package left?") || ""
+          customerName: record.get("Customers Full Name") || "",
+          customerAddress: record.get("Customers Delivery Address") || ""
         }
       });
     }
