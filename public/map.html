@@ -68,18 +68,32 @@
 
       // Add legend control
       const legend = L.control({ position: 'topright' });
+            // Add legend control
+      const legend = L.control({ position: 'topright' });
       legend.onAdd = function(map) {
         const div = L.DomUtil.create('div', 'info legend');
         div.innerHTML = `
           <h4>Legend</h4>
+          <!-- Zones -->
           <div><span style="width:12px; height:12px; background:lightgreen;"></span>Zone 1: Property lot</div>
           <div><span style="width:12px; height:12px; background:lightblue;"></span>Zone 2: Neighbours</div>
           <div><span style="width:12px; height:12px; background:orange;"></span>Zone 3: Street area</div>
           <hr>
-          <div><span style="width:12px; height:12px; border-radius:6px; background:green;"></span>Delivered location</div>
-          <div><span style="width:12px; height:12px; border-radius:6px; background:lightgrey;"></span>Opened after delivery</div>
-          <div><span style="width:12px; height:12px; border-radius:6px; background:skyblue;"></span>Delivery address</div>
+          <!-- Custom icons -->
+          <div>
+            <img src="/icons/delivered.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            Delivered location
+          </div>
+          <div>
+            <img src="/icons/opened.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            Opened after delivery
+          </div>
+          <div>
+            <img src="/icons/address.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            Delivery address
+          </div>
           <hr>
+          <!-- Trails -->
           <div><span style="color:red; font-weight:bold;">×</span>In-transit route</div>
           <div><span style="color:orange; font-weight:bold;">×</span>Tampered route</div>
           <div><span style="color:yellow; font-weight:bold;">×</span>Stolen route</div>
@@ -143,26 +157,40 @@
             L.geoJSON(data, {
               pointToLayer(feature, latlng) {
                 const ev = feature.properties.event;
-                const isOpened  = ev === "opened";
-                const isAddress = ev === "address";
-                const color = isOpened ? "grey" : isAddress ? "blue" : "green";
-                const fill = isOpened ? "lightgrey" : isAddress ? "skyblue" : "lightgreen";
 
-                const marker = L.circleMarker(latlng, {
-                  radius: 8, color, fillColor: fill, fillOpacity: 1, weight: 2
+                // choose a custom icon based on event
+                let iconUrl;
+                if (ev === 'delivered') {
+                  iconUrl = '/icons/delivered.png';
+                } else if (ev === 'opened') {
+                  iconUrl = '/icons/opened.png';
+                } else if (ev === 'address') {
+                  iconUrl = '/icons/address.png';
+                } else if (ev === 'route_in_transit' || ev === 'route_tampered' || ev === 'route_stolen') {
+                  // skip line features
+                  return null;
+                }
+
+                const customIcon = L.icon({
+                  iconUrl,
+                  iconSize: [32, 32], // adjust to your icon dimensions
+                  iconAnchor: [16, 32],
+                  popupAnchor: [0, -32]
                 });
+
+                const marker = L.marker(latlng, { icon: customIcon });
 
                 // build popup html
                 let html = `<strong>${ev.toUpperCase()}</strong><br>`;
 
-                if (isAddress) {
-                  html += `Name: ${feature.properties.customerName || "N/A"}<br>`;
-                  html += `Address: ${feature.properties.customerAddress || "N/A"}`;
+                if (ev === 'address') {
+                  html += `Name: ${feature.properties.customerName || 'N/A'}<br>`;
+                  html += `Address: ${feature.properties.customerAddress || 'N/A'}`;
                 } else {
-                  html += `Status: ${feature.properties.status || "N/A"}<br>`;
-                  html += `Left: ${feature.properties.left || "N/A"}<br>`;
+                  html += `Status: ${feature.properties.status || 'N/A'}<br>`;
+                  html += `Left: ${feature.properties.left || 'N/A'}<br>`;
 
-                  if (ev === "delivered") {
+                  if (ev === 'delivered') {
                     if (feature.properties.deliveredTime) {
                       const dt = new Date(feature.properties.deliveredTime);
                       html += `Delivered At: ${dt.toLocaleString()}<br>`;
@@ -170,8 +198,7 @@
                     if (feature.properties.photoUrl) {
                       html += `<img src="${feature.properties.photoUrl}" alt="Delivery Photo" style="max-width:200px; margin-top:5px; display:block;"/>`;
                     }
-                  }
-                  else if (ev === "opened") {
+                  } else if (ev === 'opened') {
                     if (feature.properties.openedTime) {
                       const ot = new Date(feature.properties.openedTime);
                       html += `Opened At: ${ot.toLocaleString()}<br>`;
