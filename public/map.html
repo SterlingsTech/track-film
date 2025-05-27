@@ -159,18 +159,18 @@
 
                 // choose a custom icon based on event
                 let iconUrl;
-                if (ev === 'delivered') {
-                  iconUrl = '/icons/delivered.png';
-                } else if (ev === 'opened') {
-                  iconUrl = '/icons/opened.png';
-                } else if (ev === 'address') {
-                  iconUrl = '/icons/address.png';
-                } else if (ev === 'route_in_transit' || ev === 'route_tampered' || ev === 'route_stolen') {
-                  // skip line features
-                  return null;
-                }
+if (ev === 'delivered') {
+  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/delivered.png?v=1748342472360';
+} else if (ev === 'opened') {
+  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/opened.png?v=1748342713386';
+} else if (ev === 'address') {
+  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/address.png?v=1748342431881';
+} else if (ev === 'route_in_transit' || ev === 'route_tampered' || ev === 'route_stolen') {
+  // skip line features
+  return null;
+}
 
-                const customIcon = L.icon({
+const customIcon = L.icon({
                   iconUrl,
                   iconSize: [32, 32], // adjust to your icon dimensions
                   iconAnchor: [16, 32],
