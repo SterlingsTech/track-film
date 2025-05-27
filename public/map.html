@@ -66,8 +66,6 @@
         { id: "mapbox/streets-v11", tileSize: 512, zoomOffset: -1 }
       ).addTo(map);
 
-      // Add legend control
-      const legend = L.control({ position: 'topright' });
             // Add legend control
       const legend = L.control({ position: 'topright' });
       legend.onAdd = function(map) {
@@ -81,15 +79,15 @@
           <hr>
           <!-- Custom icons -->
           <div>
-            <img src="/icons/delivered.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            <img src="https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/delivered.png?v=1748342472360" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
             Delivered location
           </div>
           <div>
-            <img src="/icons/opened.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            <img src="https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/opened.png?v=1748342713386" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
             Opened after delivery
           </div>
           <div>
-            <img src="/icons/address.png" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
+            <img src="https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/address.png?v=1748342431881" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
             Delivery address
           </div>
           <hr>
@@ -101,6 +99,7 @@
         return div;
       };
       legend.addTo(map);
+
 
       // ── STOP AUTO‐FIT AFTER USER MOVES ──
       let userMoved = false;
