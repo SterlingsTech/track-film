@@ -71,7 +71,7 @@
       legend.onAdd = function(map) {
         const div = L.DomUtil.create('div', 'info legend');
         div.innerHTML = `
-          <h4>Legend</h4>
+          <h4>Key</h4>
           <!-- Zones -->
           <div><span style="width:12px; height:12px; background:lightgreen;"></span>Zone 1: Property lot</div>
           <div><span style="width:12px; height:12px; background:lightblue;"></span>Zone 2: Neighbours</div>
@@ -84,7 +84,7 @@
           </div>
           <div>
             <img src="https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/opened.png?v=1748342713386" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
-            Opened after delivery
+            Opened location
           </div>
           <div>
             <img src="https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/address.png?v=1748342431881" width="16" height="16" style="vertical-align:middle;margin-right:6px;"/>
@@ -148,9 +148,9 @@
                 }).addTo(map);
               });
             }
-            drawTrail("route_in_transit", "red", "icon-red");
-            drawTrail("route_tampered",   "orange", "icon-orange");
-            drawTrail("route_stolen",     "yellow", "icon-yellow");
+            drawTrail("route_in_transit", "darkgreen", "icon-red");
+            drawTrail("route_tampered", "darkorange", "icon-orange");
+            drawTrail("route_stolen", "darkpurple", "icon-yellow");
 
             // markers & popups with custom address popup
             L.geoJSON(data, {
