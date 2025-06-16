@@ -15,6 +15,22 @@
         width: 100%;
         height: 100%;
       }
+      .record-selector {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 4px;
+        box-shadow: 0 0 6px rgba(0,0,0,0.3);
+      }
+      .record-selector select {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        min-width: 200px;
+      }
       .icon-red    { color: red;    font-size: 16px; }
       .icon-orange { color: orange; font-size: 16px; }
       .icon-purple { color: purple; font-size: 16px; }
@@ -43,30 +59,23 @@
     </style>
   </head>
   <body>
+    <div class="record-selector">
+      <select id="recordSelect" onchange="changeRecord()">
+        <option value="">Select a record...</option>
+      </select>
+    </div>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script>
-      const PROJECT = "goofy-rattle-casquette";
-      const MAPBOX_TOKEN = "pk.eyJ1IjoiYXNpZGF0LXRlc3QiLCJhIjoiY21hM3ExbnNpMmt1NjJrc21hemppdHlmZyJ9.P8Olfvt6pYjiyzHHOkAG4g";
-
-      const params = new URLSearchParams(window.location.search);
-      const recId = params.get("recId");
-      if (!recId) {
-        alert("Please provide ?recId=<your-record-id> in the URL");
-        throw new Error("recId missing");
-      }
-
-      const DATA_URL = `https://${PROJECT}.glitch.me/data/${recId}`;
-
       // initialize map
       const map = L.map("map").setView([51.505, -0.09], 13);
       L.tileLayer(
-        `https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=${MAPBOX_TOKEN}`,
-        { id: "mapbox/streets-v11", tileSize: 512, zoomOffset: -1 }
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        { attribution: '© OpenStreetMap contributors' }
       ).addTo(map);
 
-            // Add legend control
+      // Add legend control
       const legend = L.control({ position: 'topright' });
       legend.onAdd = function(map) {
         const div = L.DomUtil.create('div', 'info legend');
@@ -100,14 +109,50 @@
       };
       legend.addTo(map);
 
+      // Load records into select dropdown
+      async function loadRecords() {
+        try {
+          const response = await fetch('/records');
+          const records = await response.json();
+          const select = document.getElementById('recordSelect');
+          
+          records.forEach(record => {
+            const option = document.createElement('option');
+            option.value = record.id;
+            option.textContent = `${record.name} (${record.status})`;
+            select.appendChild(option);
+          });
+
+          // If there's a record ID in the URL, select it
+          const params = new URLSearchParams(window.location.search);
+          const recId = params.get("recId");
+          if (recId) {
+            select.value = recId;
+            render(recId);
+          }
+        } catch (error) {
+          console.error('Error loading records:', error);
+        }
+      }
+
+      // Change record when select changes
+      function changeRecord() {
+        const recId = document.getElementById('recordSelect').value;
+        if (recId) {
+          // Update URL without reloading
+          const newUrl = `${window.location.pathname}?recId=${recId}`;
+          window.history.pushState({}, '', newUrl);
+          render(recId);
+        }
+      }
 
       // ── STOP AUTO‐FIT AFTER USER MOVES ──
       let userMoved = false;
       map.on("movestart", () => { userMoved = true; });
       // ─────────────────────────────────────
 
-      function render() {
-        fetch(DATA_URL)
+      function render(recId) {
+        fetch(`/data/${recId}`)
           .then(r => r.json())
           .then(data => {
             // remove old overlays
@@ -159,20 +204,20 @@
 
                 // choose a custom icon based on event
                 let iconUrl;
-if (ev === 'delivered') {
-  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/delivered.png?v=1748342472360';
-} else if (ev === 'opened') {
-  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/opened.png?v=1748342713386';
-} else if (ev === 'address') {
-  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/address.png?v=1748342431881';
-} else if (ev === 'route_in_transit' || ev === 'route_tampered' || ev === 'route_stolen') {
-  // skip line features
-  return null;
-}
+                if (ev === 'delivered') {
+                  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/delivered.png?v=1748342472360';
+                } else if (ev === 'opened') {
+                  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/opened.png?v=1748342713386';
+                } else if (ev === 'address') {
+                  iconUrl = 'https://cdn.glitch.global/61e7714e-e703-4205-9c55-20187cbf8b01/address.png?v=1748342431881';
+                } else if (ev === 'route_in_transit' || ev === 'route_tampered' || ev === 'route_stolen') {
+                  // skip line features
+                  return null;
+                }
 
-const customIcon = L.icon({
+                const customIcon = L.icon({
                   iconUrl,
-                  iconSize: [32, 32], // adjust to your icon dimensions
+                  iconSize: [32, 32],
                   iconAnchor: [16, 32],
                   popupAnchor: [0, -32]
                 });
@@ -218,8 +263,8 @@ const customIcon = L.icon({
           });
       }
 
-      render();
-      setInterval(render, 10000);
+      // Load records when page loads
+      loadRecords();
     </script>
   </body>
 </html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Package Tracking - Select Record</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .record-list {
+            list-style: none;
+            padding: 0;
+        }
+        .record-item {
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .record-item:hover {
+            background-color: #f5f5f5;
+        }
+        .view-button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .view-button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .status-delivered { background-color: #d4edda; color: #155724; }
+        .status-in-transit { background-color: #fff3cd; color: #856404; }
+        .status-tampered { background-color: #f8d7da; color: #721c24; }
+        .status-stolen { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Package Tracking</h1>
+    <p>Select a record to view on the map:</p>
+    <ul id="recordList" class="record-list"></ul>
+
+    <script>
+        async function loadRecords() {
+            try {
+                const response = await fetch('/records');
+                const records = await response.json();
+                
+                const recordList = document.getElementById('recordList');
+                recordList.innerHTML = records.map(record => `
+                    <li class="record-item">
+                        <div>
+                            <strong>${record.name}</strong>
+                            <span class="status status-${record.status.toLowerCase().replace(/\s+/g, '-')}">
+                                ${record.status}
+                            </span>
+                        </div>
+                        <a href="map.html?recId=${record.id}" class="view-button">View on Map</a>
+                    </li>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading records:', error);
+                document.getElementById('recordList').innerHTML = 
+                    '<li>Error loading records. Please try again later.</li>';
+            }
+        }
+
+        loadRecords();
+    </script>
+</body>
+</html>

@@ -1,5 +1,14 @@
+require('dotenv').config();
 const Express = require("express");
 const Airtable = require("airtable");
+
+// Check for required environment variables
+const requiredEnvVars = ['AIRTABLE_API_KEY', 'AIRTABLE_BASE_ID', 'TABLE_NAME'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
 
 // Initialize Express and serve static files
 const app = Express();
@@ -8,6 +17,22 @@ app.use(Express.static("public"));
 // Initialize Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
   .base(process.env.AIRTABLE_BASE_ID);
+
+// Add endpoint to list all records
+app.get("/records", async (req, res) => {
+  try {
+    const records = await base(process.env.TABLE_NAME).select().all();
+    const recordList = records.map(record => ({
+      id: record.id,
+      name: record.get("Customers Full Name") || "Unnamed",
+      status: record.get("Package Status") || "Unknown"
+    }));
+    res.json(recordList);
+  } catch (err) {
+    console.error('Error fetching records:', err);
+    res.status(500).json({ error: "Failed to fetch records" });
+  }
+});
 
 app.get("/data/:recId", async (req, res) => {
   const recId = req.params.recId;
@@ -110,11 +135,18 @@ app.get("/data/:recId", async (req, res) => {
     // Return the GeoJSON FeatureCollection
     res.json({ type: "FeatureCollection", features });
   } catch (err) {
-    console.error(err);
-    res.status(404).json({ error: "Record not found" });
+    console.error('Error fetching record:', err);
+    if (err.statusCode === 404) {
+      res.status(404).json({ error: "Record not found" });
+    } else if (err.statusCode === 401) {
+      res.status(401).json({ error: "Unauthorized - Check your Airtable API key" });
+    } else {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 });
 
-const listener = app.listen(process.env.PORT, () => {
+const PORT = process.env.PORT || 3000;
+const listener = app.listen(PORT, () => {
   console.log("Listening on port " + listener.address().port);
 });
