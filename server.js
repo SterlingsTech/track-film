@@ -12,7 +12,7 @@ if (missingEnvVars.length > 0) {
 
 // Initialize Express and serve static files
 const app = Express();
-app.use(Express.static("public"));
+app.use(Express.static(__dirname + "/public"));
 
 // Initialize Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY })
@@ -150,3 +150,4 @@ const PORT = process.env.PORT || 3000;
 const listener = app.listen(PORT, () => {
   console.log("Listening on port " + listener.address().port);
 });
+  

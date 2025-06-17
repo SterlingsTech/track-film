@@ -1,3 +1,7 @@
 .glitchdotcom.json
 .node-gyp
 node_modules
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
